@@ -1,3 +1,8 @@
+<# 
+Sample detection script for deploying Commercial Vantage as a Win32 app
+Reference: https://blog.lenovocdrt.com/#/2020/cv_intune_deploy
+#>
+
 $ErrorActionPreference = 'Stop'
 
 try {
