@@ -13,7 +13,7 @@
     Specify the path to the Commercial Vantage detection script file.
 
 .EXAMPLE
-    .\New-CommercialVantageWin32.ps1 -Tenant tenant.onmicrosoft.com -PackagePath "C:\LenovoCommercialVantage_10.2208.22.0_v3" -DetectionScriptFile "C:\Detect-CommercialVantage.ps1"
+    .\New-CommercialVantageWin32.ps1 -Tenant tenant.onmicrosoft.com -PackagePath "C:\LenovoCommercialVantage_10.2208.22.0_v3.zip" -DetectionScriptFile "C:\Detect-CommercialVantage.ps1"
 
 .NOTES
     Author:     Philip Jorgensen
