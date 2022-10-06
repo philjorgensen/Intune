@@ -61,7 +61,7 @@ if ($null -eq $InstalledModule) {
 
 try {
     # Create .intunewin file
-    New-IntuneWin32AppPackage -SourceFolder $Source -SetupFile "setup-commercial-vantage.bat" -OutputFolder (Split-Path -Path $PackagePath -Parent) -Verbose
+    New-IntuneWin32AppPackage -SourceFolder (Get-ChildItem -Path $Source * -Directory) -SetupFile (Get-ChildItem -Path $Source -Include "setup-commercial-vantage.bat" -Recurse).Name -OutputFolder (Split-Path -Path $PackagePath -Parent) -Verbose
 
     $IntuneWinFile = Get-ChildItem -Path (Split-Path -Path $PackagePath -Parent) -Filter "*.intunewin"
     $IntuneWinMetaData = Get-IntuneWin32AppMetaData -FilePath $IntuneWinFile
@@ -111,7 +111,7 @@ Add-IntuneWin32App `
     -DisplayName 'Commercial Vantage' `
     -Description "This package updates the UEFI BIOS (including system program and Embedded Controller program) stored in the ThinkPad computer to fix problems, add new functions, or expand functions." `
     -Publisher "Lenovo" `
-    -AppVersion (Split-Path $PackagePath -Leaf).Split('_')[1] `
+    -AppVersion "$($Source.Split('_')[1,+-1] -join "_")" `
     -InformationURL "https://support.lenovo.com/solutions/hf003321-lenovo-vantage-for-enterprise" `
     -InstallExperience system `
     -RequirementRule $RequirementRule `
