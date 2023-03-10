@@ -18,6 +18,8 @@
 .NOTES
     Author:     Philip Jorgensen
     Created:    2022-09-15
+    Change:     2023-03-10 - Switch to hash table splatting and added logic for vX package versioning
+    
 
 #>
 
@@ -61,7 +63,12 @@ if ($null -eq $InstalledModule) {
 
 try {
     # Create .intunewin file
-    New-IntuneWin32AppPackage -SourceFolder (Get-ChildItem -Path $Source * -Directory) -SetupFile (Get-ChildItem -Path $Source -Include "setup-commercial-vantage.bat" -Recurse).Name -OutputFolder (Split-Path -Path $PackagePath -Parent) -Verbose
+    $intuneWinParams = @{
+        SourceFolder = (Get-ChildItem -Path $Source * -Directory)
+        SetupFile    = (Get-ChildItem -Path $Source -Include "setup-commercial-vantage.bat" -Recurse).Name
+        OutputFolder = (Split-Path -Path $PackagePath -Parent)
+    } 
+    New-IntuneWin32AppPackage @intuneWinParams -Verbose
 
     $IntuneWinFile = Get-ChildItem -Path (Split-Path -Path $PackagePath -Parent) -Filter "*.intunewin"
     $IntuneWinMetaData = Get-IntuneWin32AppMetaData -FilePath $IntuneWinFile
@@ -86,41 +93,63 @@ $InstallCommandLine = $IntuneWinMetaData.ApplicationInfo.Name
 $UninstallCommandLine = "C:\Windows\Sysnative\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -File .\uninstall_vantage_v8\uninstall_all.ps1"
 
 # Create requirement rule
-$RequirementRule = New-IntuneWin32AppRequirementRule `
-    -Architecture x64 `
-    -MinimumSupportedWindowsRelease $MinSupportedOS
+$reqRuleParams = @{
+    Architecture                   = "x64"
+    MinimumSupportedWindowsRelease = $MinSupportedOS
+}
+
+$RequirementRule = New-IntuneWin32AppRequirementRule @reqRuleParams
 
 # Create requirement registry rules
-$RequirementRegistryRule = New-IntuneWin32AppRequirementRuleRegistry `
-    -StringComparison `
-    -KeyPath $RegistryKeyPath `
-    -ValueName 'SystemManufacturer' `
-    -StringComparisonOperator equal `
-    -StringComparisonValue 'LENOVO' `
-    -Check32BitOn64System $false
+$regRuleParams = @{
+    StringComparison         = $true
+    KeyPath                  = $RegistryKeyPath
+    ValueName                = "SystemManufacturer"
+    StringComparisonOperator = "equal"
+    StringComparisonValue    = "LENOVO"
+    Check32BitOn64System     = $false
+}
+
+$RequirementRegistryRule = New-IntuneWin32AppRequirementRuleRegistry @regRuleParams
 
 # Create detection rule
-$DetectionRule = New-IntuneWin32AppDetectionRuleScript `
-    -ScriptFile $DetectionScriptFile `
-    -EnforceSignatureCheck $false `
-    -RunAs32Bit $false
+$detectParams = @{
+    ScriptFile            = $DetectionScriptFile
+    EnforceSignatureCheck = $false
+    RunAs32Bit            = $false
+}
 
-# Add Win32app
-Add-IntuneWin32App `
-    -FilePath $IntuneWinFile `
-    -DisplayName 'Commercial Vantage' `
-    -Description "This package updates the UEFI BIOS (including system program and Embedded Controller program) stored in the ThinkPad computer to fix problems, add new functions, or expand functions." `
-    -Publisher "Lenovo" `
-    -AppVersion "$($Source.Split('_')[1,+-1] -join "_")" `
-    -InformationURL "https://support.lenovo.com/solutions/hf003321-lenovo-vantage-for-enterprise" `
-    -InstallExperience system `
-    -RequirementRule $RequirementRule `
-    -AdditionalRequirementRule $RequirementRegistryRule `
-    -RestartBehavior basedOnReturnCode `
-    -DetectionRule $DetectionRule `
-    -InstallCommandLine $InstallCommandLine `
-    -UninstallCommandLine $UninstallCommandLine `
-    -Verbose
+$DetectionRule = New-IntuneWin32AppDetectionRuleScript @detectParams
+
+<#
+Some of the dependencies related to the Vantage service may be updated, resulting in a vX package (v2,v3,v4,etc)
+This logic will set the appropriate version if a vX package is downloaded
+#>
+if ($Source.Split("\")[-1] -match "_v") {
+    $AppVersion = "$($Source.Split('_')[1,+-1] -join "_")"
+}
+else {
+    $AppVersion = "$($Source.Split('_')[1])"
+}
+
+# Add Win32 App
+$appParams = @{
+    FilePath                  = $IntuneWinFile
+    DisplayName               = "Commercial Vantage"
+    Description               = "This package updates the UEFI BIOS (including system program and Embedded Controller program) stored in the ThinkPad computer to fix problems, add new functions, or expand functions."
+    Publisher                 = "Lenovo"
+    AppVersion                = $AppVersion
+    InformationURL            = "https://support.lenovo.com/solutions/hf003321-lenovo-vantage-for-enterprise"
+    InstallExperience         = "system"
+    RequirementRule           = $RequirementRule
+    AdditionalRequirementRule = $RequirementRegistryRule
+    RestartBehavior           = "basedOnReturnCode"
+    DetectionRule             = $DetectionRule
+    InstallCommandLine        = $InstallCommandLine
+    UninstallCommandLine      = $UninstallCommandLine
+}
+
+Add-IntuneWin32App @appParams -Verbose
 
 # Cleanup
 Remove-Item -Path $IntuneWinFile -Force

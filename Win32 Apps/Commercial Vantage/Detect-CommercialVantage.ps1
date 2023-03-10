@@ -1,5 +1,5 @@
 # Change this variable to the version you're deploying
-$DeployedVantageVersion = "10.2208.22.0"
+$DeployedVantageVersion = "10.2303.8.0"
 
 $ErrorActionPreference = "Stop"
 
