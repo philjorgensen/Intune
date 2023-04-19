@@ -1,4 +1,4 @@
-<#
+ <#
 
 .SYNOPSIS
     Create a new Win32 application for Commercial Vantage.
@@ -64,10 +64,10 @@ if ($null -eq $InstalledModule) {
 try {
     # Create .intunewin file
     $intuneWinParams = @{
-        SourceFolder = (Get-ChildItem -Path $Source * -Directory)
+        SourceFolder = (Get-ChildItem -Path $Source * -Directory).FullName
         SetupFile    = (Get-ChildItem -Path $Source -Include "setup-commercial-vantage.bat" -Recurse).Name
         OutputFolder = (Split-Path -Path $PackagePath -Parent)
-    } 
+    }
     New-IntuneWin32AppPackage @intuneWinParams -Verbose
 
     $IntuneWinFile = Get-ChildItem -Path (Split-Path -Path $PackagePath -Parent) -Filter "*.intunewin"
@@ -134,7 +134,7 @@ else {
 
 # Add Win32 App
 $appParams = @{
-    FilePath                  = $IntuneWinFile
+    FilePath                  = $IntuneWinFile.FullName
     DisplayName               = "Commercial Vantage"
     Description               = "This package updates the UEFI BIOS (including system program and Embedded Controller program) stored in the ThinkPad computer to fix problems, add new functions, or expand functions."
     Publisher                 = "Lenovo"
@@ -152,4 +152,4 @@ $appParams = @{
 Add-IntuneWin32App @appParams -Verbose
 
 # Cleanup
-Remove-Item -Path $IntuneWinFile -Force
+Remove-Item -Path $IntuneWinFile -Force 
