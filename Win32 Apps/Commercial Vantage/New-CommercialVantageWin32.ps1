@@ -67,7 +67,7 @@ try {
         SourceFolder = (Get-ChildItem -Path $Source * -Directory).FullName
         SetupFile    = (Get-ChildItem -Path $Source -Include "setup-commercial-vantage.bat" -Recurse).Name
         OutputFolder = (Split-Path -Path $PackagePath -Parent)
-    }
+    } 
     New-IntuneWin32AppPackage @intuneWinParams -Verbose
 
     $IntuneWinFile = Get-ChildItem -Path (Split-Path -Path $PackagePath -Parent) -Filter "*.intunewin"
