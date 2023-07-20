@@ -19,6 +19,7 @@
     Author:     Philip Jorgensen
     Created:    2022-09-15
     Change:     2023-03-10 - Switch to hash table splatting and added logic for vX package versioning
+    Change:     2023-07-20 - Update MinSupportedOs value
     
 
 #>
@@ -83,7 +84,7 @@ catch {
 Connect-MSIntuneGraph -TenantID $Tenant
 
 # Make a constant so there are no magic numbers
-Set-Variable MinSupportedOS -Option Constant -Value 1809
+Set-Variable MinSupportedOS -Option Constant -Value w10_1809
 Set-Variable RegistryKeyPath -Option Constant -Value 'HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\BIOS'
 
 # Install command line
