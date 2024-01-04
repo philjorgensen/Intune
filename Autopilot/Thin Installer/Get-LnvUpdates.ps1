@@ -659,6 +659,15 @@ try
 
                         break
                     }
+                    try
+                    {
+                        $packageID = $pkgXML.Package.id
+                    }
+                    catch
+                    {
+                        Write-LogError("Could not find package ID for $url")
+                        break
+                    }
                     #Filter by Package Type and Reboot Type
                     if (($global:rt -contains $pkgXML.Package.Reboot.type) -and ($global:pt -contains $pkgXML.Package.PackageType.type))
                     {
