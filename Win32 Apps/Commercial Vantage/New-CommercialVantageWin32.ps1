@@ -65,7 +65,7 @@ if ($null -eq $InstalledModule) {
 try {
     # Create .intunewin file
     $intuneWinParams = @{
-        SourceFolder = (Get-ChildItem -Path $Source * -Directory)
+        SourceFolder = (Get-Item -Path $Source).FullName
         SetupFile    = (Get-ChildItem -Path $Source -Include "setup-commercial-vantage.bat" -Recurse).Name
         OutputFolder = (Split-Path -Path $PackagePath -Parent)
     } 
