@@ -53,11 +53,13 @@ $RegName = "AdminCommandLine"
 $RegValue = "/CM -search A -action INSTALL -includerebootpackages 3 -noicon -noreboot -exporttowmi"
 
 # Create Subkeys if they don't exist
-if (!(Test-Path $RegKey)) {
+if (!(Test-Path $RegKey))
+{
     New-Item -Path $RegKey -Force | Out-Null
     New-ItemProperty -Path $RegKey -Name $RegName -Value $RegValue | Out-Null
 }
-else {
+else
+{
     New-ItemProperty -Path $RegKey -Name $RegName -Value $RegValue -Force | Out-Null
 }
 
@@ -75,8 +77,10 @@ $values = @{
 
 }
 
-if (Test-Path $ui) {
-    foreach ($item in $values.GetEnumerator() ) {
+if (Test-Path $ui)
+{
+    foreach ($item in $values.GetEnumerator() )
+    {
         New-ItemProperty -Path $ui -Name $item.Key -Value $item.Value -Force
     }
 }
