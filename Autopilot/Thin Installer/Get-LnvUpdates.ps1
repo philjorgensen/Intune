@@ -71,12 +71,6 @@ has been advised of the possibility of such damages.
   Must be a fully qualified path to the folder where the local repository
   will be saved. Must be surrounded by single quotes.
 
-  .PARAMETER LogPath
-  Mandatory: False
-  Data type: String
-  Must be a fully qualified path. If not specified, ti-auto-repo.log will be 
-  stored in the repository folder. Must be surrounded by single quotes.
-
   .PARAMETER RT5toRT3
   Mandatory: False
   Data type: Switch
@@ -87,13 +81,6 @@ has been advised of the possibility of such damages.
   line to suppress reboot to allow the task sequence to control the restart.
   NOTE: This parameter can only be used when Thin Installer will be processing
   the updates in the repository.
-
-  .PARAMETER ScanOnly
-  Mandatory: False
-  Data type: Switch
-  Specify this parameter to create a repository that only contains the package
-  descriptor XML and external detection routine files to be used with Thin 
-  Installer's SCAN action.
 
   .PARAMETER Install
   Mandatory: False
@@ -177,6 +164,7 @@ function Write-LogError
         [Parameter(Mandatory = $True)]
         [string]$Message
     )
+
     $logline = "[LNV_ERROR_$((Get-Date).ToString("yyyy-MM-ddTHH:mm:ss"))]: $Message" 
     Out-File -FilePath "$LogPath" -InputObject $logline -Append -NoClobber -Force
     return $logline
@@ -203,6 +191,10 @@ function Write-LogInformation
     Out-File -FilePath "$LogPath" -InputObject $logline -Append -NoClobber
     return $logline 
 }
+
+#Log path
+$LogPath = Join-Path -Path $RepositoryPath -ChildPath "ti-auto-repo.log"
+
 #endregion
 
 #region helpers
@@ -223,7 +215,7 @@ function Get-XmlFile
     {
         try
         {
-            [System.XML.XMLDocument]$xmlFile = (New-Object System.Net.WebClient).DownloadString($Url)
+            [System.XML.XMLDocument]$xmlFile = (New-Object -TypeName System.Net.WebClient).DownloadString($Url)
             $stop = $true
         }
         catch
@@ -350,6 +342,7 @@ function Confirm-Parameters
 #endregion
 
 #region globals
+#region XSD
 $dbxsd_text = @"
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
@@ -504,12 +497,12 @@ $dbxsd_text = @"
        </xs:element>
   </xs:schema>
 "@
+#endregion
 
 $global:MachineTypesArray = $null
-
 $global:rt = @()
 
-if ($RebootTypes -ne '')
+if (-not [string]::IsNullOrWhiteSpace($RebootTypes))
 {
     $global:rt = $RebootTypes.Split(',')
 }
@@ -519,7 +512,7 @@ else
 }
 
 $global:pt = @()
-if ($PackageTypes -ne '')
+if (-not [string]::IsNullOrWhiteSpace($PackageTypes))
 {
     $global:pt = $PackageTypes.Split(',')
 }
@@ -529,7 +522,7 @@ else
 }
 
 #get OS - if not specified or not one of 11 or 10, then default to 10
-if ($OS -eq '')
+if ($null -eq $OS)
 {
     $OS = (Get-CimInstance -Namespace root/CIMV2 -ClassName Win32_OperatingSystem).Version
     if ($OS -match '10.0.1')
@@ -559,7 +552,7 @@ else
     $global:OSName = "Windows 10"
 }
 
-if ($LogPath -eq "")
+if (-not [string]::IsNullOrWhiteSpace($LogPath))
 {
     $LogPath = Join-Path -Path $RepositoryPath -ChildPath "ti-auto-repo.log"
 }
@@ -592,7 +585,7 @@ try
     }
 
     #1.1 Create database.xsd file
-    [System.XML.XMLDocument]$dbxsd = New-Object System.Xml.XmlDocument
+    [System.XML.XMLDocument]$dbxsd = New-Object -TypeName System.Xml.XmlDocument
     $dbxsd.LoadXml($dbxsd_text)
     $databaseXsdPath = Join-Path -Path $RepositoryPath -ChildPath "database.xsd"
     $dbxsd.Save($databaseXsdPath)
@@ -602,7 +595,7 @@ try
     $severities = @("None", "Critical", "Recommended", "Optional")
 
     #Initialize dbxml
-    [System.XML.XMLDocument]$dbxml = New-Object System.Xml.XmlDocument
+    [System.XML.XMLDocument]$dbxml = New-Object -TypeName System.Xml.XmlDocument
     $xmldecl = $dbxml.CreateXmlDeclaration("1.0", "UTF-8", $null)
     [System.XML.XMLElement]$dbxmlRoot = $dbxml.CreateElement("Database")
     $dbxml.InsertBefore($xmldecl, $dbxml.DocumentElement) | Out-Null
@@ -616,7 +609,7 @@ try
         {
             $catalogUrl = "https://download.lenovo.com/catalog/$mt`_$global:OS.xml"
             $catalog = Get-XmlFile -Url $catalogUrl
-            if (!$catalog)
+            if (-not($catalog))
             {
                 Write-LogError("Failed to download the updates catalog from $catalogUrl. Check that $mt is a valid machine type."); Exit 1
             }
