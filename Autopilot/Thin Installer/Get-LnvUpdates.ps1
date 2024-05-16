@@ -522,34 +522,39 @@ else
 }
 
 #get OS - if not specified or not one of 11 or 10, then default to 10
-if ($null -eq $OS)
+# Attempt to retrieve the OS version
+try
 {
     $OS = (Get-CimInstance -Namespace root/CIMV2 -ClassName Win32_OperatingSystem).Version
-    if ($OS -match '10.0.1')
+    #$OS = (Get-CimInstance -Namespace root/CIMV2 -ClassName Win32_OperatingSystem).Version
+}
+catch
+{
+    Write-LogError("Failed to retrieve OS version: $_")
+    
+    # Handle the error gracefully (e.g., set default OS version)
+    $OS = "10.0.0"  # Default to Windows 10 if OS version cannot be retrieved
+}
+
+# Determine OS based on the version
+switch ($true)
+{
+    { $OS -match '10.0.1' }
     {
         $global:OS = "Win10"
-        $global:OSName = "Windows 10"  
+        $global:OSName = "Windows 10"
     }
-    elseif ($OS -match '10.0.2')
+    { $OS -match '10.0.2' }
     {
         $global:OS = "Win11"
         $global:OSName = "Windows 11"
-    }  
-}
-elseif ($OS -eq '10')
-{
-    $global:OS = "Win10"
-    $global:OSName = "Windows 10"
-}
-elseif ($OS -eq '11')
-{
-    $global:OS = "Win11"
-    $global:OSName = "Windows 11"
-}
-else
-{
-    $global:OS = "Win10"
-    $global:OSName = "Windows 10"
+    }
+    default
+    {
+        # Default to Windows 10 if version is not specifically matched
+        $global:OS = "Win10"
+        $global:OSName = "Windows 10"
+    }
 }
 
 if (-not [string]::IsNullOrWhiteSpace($LogPath))
