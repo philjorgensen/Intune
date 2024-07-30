@@ -533,7 +533,7 @@ catch
     Write-LogError("Failed to retrieve OS version: $_")
     
     # Handle the error gracefully (e.g., set default OS version)
-    $OS = "10.0.0"  # Default to Windows 10 if OS version cannot be retrieved
+    $OS = "10.0.1"  # Default to Windows 10 if OS version cannot be retrieved
 }
 
 # Determine OS based on the version
