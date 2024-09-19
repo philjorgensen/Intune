@@ -1,4 +1,3 @@
-#Version 1.0 - Initial
 <#
 DISCLAIMER:
 These sample scripts are not supported under any Lenovo standard support  
@@ -99,6 +98,10 @@ has been advised of the possibility of such damages.
   .OUTPUTS
   System.Int32. 0 - success
   System.Int32. 1 - fail
+
+  .NOTES
+  #Version 1.0 - Initial
+  #Version 1.1 - Added -ignorexmlsignature parameter to Thin Installer command line. This is required if -RT5toRT3 switch is used
 #>
 
 Param(
@@ -862,7 +865,7 @@ try
         {
             Write-LogInformation("Installing applicable updates.")
             $tiPath = "$(${env:ProgramFiles(x86)})\Lenovo\ThinInstaller\ThinInstaller.exe"
-            $tiParams = @('/CM -repository C:\ProgramData\Lenovo\ThinInstaller\Repository -search A -action INSTALL -includerebootpackages 0,3 -packagetypes 1,2,3,4 -debug -noreboot -noicon -exporttowmi')
+            $tiParams = @('/CM -repository C:\ProgramData\Lenovo\ThinInstaller\Repository -search A -action INSTALL -includerebootpackages 0,3 -packagetypes 1,2,3,4 -debug -ignorexmlsignature -noreboot -noicon -exporttowmi')
             Start-Process -FilePath $tiPath -ArgumentList @tiParams -Wait
             Write-LogInformation("Updates have been installed.")
         }
