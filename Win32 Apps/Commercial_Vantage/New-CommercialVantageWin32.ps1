@@ -107,7 +107,7 @@ function Uncomment-BatFileLine
         [string]$Pattern,
         [string]$Replacement
     )
-    
+
     if (Test-Path -Path $FilePath)
     {
         try

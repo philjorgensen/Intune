@@ -1,5 +1,5 @@
 # Version of Lenovo Vantage that is being deployed
-$DeployedVantageVersion = [version]"10.2407.66.0"
+$DeployedVantageVersion = [version]"10.2501.15.0"
 
 try
 {
