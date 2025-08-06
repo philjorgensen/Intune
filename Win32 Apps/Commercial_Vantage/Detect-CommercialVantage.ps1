@@ -43,6 +43,26 @@ catch
     exit 1
 }
 
+# Check for the Lenovo Vantage Addins directory
+try
+{
+    $addinsPath = "$env:ProgramData\Lenovo\Vantage\Addins"
+    if (Test-Path -Path $addinsPath -PathType Container)
+    {
+        Write-Output "Lenovo Vantage Addins directory found at $addinsPath."
+    }
+    else
+    {
+        Write-Output "Lenovo Vantage Addins directory not found at $addinsPath."
+        exit 1
+    }
+}
+catch
+{
+    Write-Output "Failed to check Lenovo Vantage Addins directory. Error: $($_.Exception.Message)"
+    exit 1
+}
+
 # Check for the Lenovo Commercial Vantage APPX package
 try
 {
