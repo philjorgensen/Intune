@@ -30,10 +30,14 @@
     .\New-CommercialVantageWin32.ps1 -Tenant "123e4567-e89b-12d3-a456-426614174000" -ZipPath "C:\LenovoCommercialVantage_10.2208.22.0_v3.zip" -DetectionScriptFile "C:\Detect-CommercialVantage.ps1" -UninstallAppOnly -Verbose
     Installs the full suite and sets the uninstall command to only uninstall the app.
 
+.EXAMPLE
+    .\New-CommercialVantageWin32.ps1 -Tenant "contoso.com" -ZipPath "C:\LenovoCommercialVantage_10.2208.22.0_v3.zip" -DetectionScriptFile "C:\Detect-CommercialVantage.ps1" -Lite -SuHelper -Verbose
+    Installs only the System Update feature of Commercial Vantage and SuHelper.
+
 .NOTES
     Author:     Philip Jorgensen
     Created:    2022-09-15
-    Updated:    2025-07-23
+    Updated:    2025-10-21
     Filename:   New-CommercialVantageWin32.ps1
 
     Version history:
@@ -45,6 +49,7 @@
                          Updated tenant validation to support GUIDs and any valid domain name
                          Update install command to use VantageInstaller.exe
                          Update uninstall command to use VantageInstaller.exe, added UninstallAppOnly parameter
+    2.1.1 - (2025-08-15) Add -Lite parameter logic to install only System Update feature (https://docs.lenovocdrt.com/guides/cv/commercial_vantage/#using-vantageinstallerexe)
 
     Requires a Microsoft Entra app registration with DeviceManagementApps.ReadWrite.All permissions.
     Reference: https://github.com/MSEndpointMgr/IntuneWin32App/issues/156
@@ -76,6 +81,9 @@ param(
 
     [Parameter(Mandatory = $false, HelpMessage = "Include SU Helper in the installation.")]
     [switch]$SUHelper,
+
+    [Parameter(Mandatory = $false, HelpMessage = "Only System Update feature will be installed.")]
+    [switch]$Lite,
 
     [Parameter(Mandatory = $false, HelpMessage = "Uninstall only the Commercial Vantage app instead of the entire suite.")]
     [switch]$UninstallAppOnly
@@ -183,7 +191,12 @@ try
     Write-Output "Authenticated successfully."
 
     # Install command line
-    $installCommandLine = "$($intuneWinMetaData.ApplicationInfo.Name) Install -Vantage"
+    $installCommandLine = "$($intuneWinMetaData.ApplicationInfo.Name) Install"
+    if ($Lite) {
+        $installCommandLine += " -Lite"
+    } else {
+        $installCommandLine += " -Vantage"
+    }
     if ($SUHelper)
     {
         $installCommandLine += " -SuHelper"
