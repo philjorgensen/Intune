@@ -235,14 +235,9 @@ try
     $detectionRule = New-IntuneWin32AppDetectionRuleScript @detectParams
 
     # Parse app version
-    $appVersion = if ($source -match "_v(\d+)$")
-    {
-        $source.Split('_')[1] + "_v" + $matches[1]
-    }
-    else
-    {
-        $source.Split('_')[1]
-    }
+    $sourceFileBase = [System.IO.Path]::GetFileNameWithoutExtension($source)
+    $appVersion = $sourceFileBase -replace '^.*_', '' -replace '\.\d{14}$', ''
+
     Write-Output "Parsed app version: $appVersion"
 
     # Add Win32 App
