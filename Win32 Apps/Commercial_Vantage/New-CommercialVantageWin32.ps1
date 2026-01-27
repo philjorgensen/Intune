@@ -50,6 +50,7 @@
                          Update install command to use VantageInstaller.exe
                          Update uninstall command to use VantageInstaller.exe, added UninstallAppOnly parameter
     2.1.1 - (2025-08-15) Add -Lite parameter logic to install only System Update feature (https://docs.lenovocdrt.com/guides/cv/commercial_vantage/#using-vantageinstallerexe)
+    2.1.2 - (2025-01-27) Change version logic due to new timestamping during zip extraction
 
     Requires a Microsoft Entra app registration with DeviceManagementApps.ReadWrite.All permissions.
     Reference: https://github.com/MSEndpointMgr/IntuneWin32App/issues/156
