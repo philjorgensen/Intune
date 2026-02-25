@@ -20,8 +20,6 @@
 .PARAMETER UninstallAppOnly
     Uninstall only the Commercial Vantage app instead of the entire suite.
 
-.
-
 .EXAMPLE
     .\New-CommercialVantageWin32.ps1 -Tenant "contoso.com" -ZipPath "C:\LenovoCommercialVantage_10.2208.22.0_v3.zip" -DetectionScriptFile "C:\Detect-CommercialVantage.ps1" -SUHelper -Verbose
     Installs the full suite with SU Helper and uninstalls the entire suite.
@@ -37,7 +35,7 @@
 .NOTES
     Author:     Philip Jorgensen
     Created:    2022-09-15
-    Updated:    2025-10-21
+    Updated:    2026-02-25
     Filename:   New-CommercialVantageWin32.ps1
 
     Version history:
@@ -51,12 +49,19 @@
                          Update uninstall command to use VantageInstaller.exe, added UninstallAppOnly parameter
     2.1.1 - (2025-08-15) Add -Lite parameter logic to install only System Update feature (https://docs.lenovocdrt.com/guides/cv/commercial_vantage/#using-vantageinstallerexe)
     2.1.2 - (2025-01-27) Change version logic due to new timestamping during zip extraction
+    2.2.0 - (2026-02-25) Fix ValidateScript extension validation for ZipPath and DetectionScriptFile
+                         Update app Description to accurately describe Commercial Vantage
+                         Remove SupportsShouldProcess from CmdletBinding
+                         Replace Write-Output with Write-Verbose/Write-Warning throughout
+                         Fix inconsistent brace style in install command logic
 
     Requires a Microsoft Entra app registration with DeviceManagementApps.ReadWrite.All permissions.
     Reference: https://github.com/MSEndpointMgr/IntuneWin32App/issues/156
+    IntuneWin32App module by Nickolaj Andersen: https://github.com/MSEndpointMgr/IntuneWin32App
+
 #>
 
-[CmdletBinding(SupportsShouldProcess = $true)]
+[CmdletBinding()]
 param(
     [Parameter(Mandatory = $true, HelpMessage = "Specify the Azure tenant name or ID (e.g., contoso.com or GUID).")]
     [ValidateScript({
@@ -73,11 +78,11 @@ param(
     [string]$Tenant,
 
     [Parameter(Mandatory = $true, HelpMessage = "Specify the path to the zip file.")]
-    [ValidateScript({ Test-Path $_ -PathType Leaf -Include "*.zip" })]
+    [ValidateScript({ (Test-Path $_ -PathType Leaf) -and ([System.IO.Path]::GetExtension($_) -eq '.zip') })]
     [string]$ZipPath,
 
     [Parameter(Mandatory = $true, HelpMessage = "Specify the path to the detection script file.")]
-    [ValidateScript({ Test-Path $_ -PathType Leaf -Include "*.ps1" })]
+    [ValidateScript({ (Test-Path $_ -PathType Leaf) -and ([System.IO.Path]::GetExtension($_) -eq '.ps1') })]
     [string]$DetectionScriptFile,
 
     [Parameter(Mandatory = $false, HelpMessage = "Include SU Helper in the installation.")]
@@ -100,7 +105,7 @@ $Config = @{
     SetupFile       = "VantageInstaller.exe"
     DisplayName     = "Commercial Vantage"
     Publisher       = "Lenovo"
-    Description     = "This package updates the UEFI BIOS (including system program and Embedded Controller program) stored in the ThinkPad computer to fix problems, add new functions, or expand functions."
+    Description     = "Commercial Vantage provides a user interface for changing hardware settings, checking for Lenovo software and driver updates, and more."
 }
 
 # Function to install or update a module
@@ -110,42 +115,42 @@ function Install-RequiredModule
         [Parameter(Mandatory = $true)]
         [string]$ModuleName
     )
-    Write-Output "Checking $ModuleName module..."
+    Write-Verbose "Checking $ModuleName module..."
     $galleryModule = Find-Module -Name $ModuleName -ErrorAction Stop
     $installedModule = Get-InstalledModule -Name $ModuleName -ErrorAction SilentlyContinue
 
-    Write-Output "Latest $ModuleName version in gallery: $($galleryModule.Version)"
+    Write-Verbose "Latest $ModuleName version in gallery: $($galleryModule.Version)"
     if ($null -eq $installedModule)
     {
-        Write-Output "Installing $ModuleName..."
+        Write-Verbose "Installing $ModuleName..."
         try
         {
             Install-Module -Name $ModuleName -Scope AllUsers -Force -ErrorAction Stop
-            Write-Output "Installed $ModuleName successfully."
+            Write-Verbose "Installed $ModuleName successfully."
         }
         catch
         {
-            Write-Output "Failed to install $ModuleName. Error: $($_.Exception.Message)"
+            Write-Warning "Failed to install $ModuleName. Error: $($_.Exception.Message)"
             throw
         }
     }
     elseif ($installedModule.Version -lt $galleryModule.Version)
     {
-        Write-Output "Updating $ModuleName from $($installedModule.Version) to $($galleryModule.Version)..."
+        Write-Verbose "Updating $ModuleName from $($installedModule.Version) to $($galleryModule.Version)..."
         try
         {
             Update-Module -Name $ModuleName -Scope AllUsers -Force -ErrorAction Stop
-            Write-Output "Updated $ModuleName successfully."
+            Write-Verbose "Updated $ModuleName successfully."
         }
         catch
         {
-            Write-Output "Failed to update $ModuleName. Error: $($_.Exception.Message)"
+            Write-Warning "Failed to update $ModuleName. Error: $($_.Exception.Message)"
             throw
         }
     }
     else
     {
-        Write-Output "$ModuleName is up to date."
+        Write-Verbose "$ModuleName is up to date."
     }
 }
 
@@ -155,15 +160,15 @@ try
     # Validate environment variables
     if (-not $Config.ClientId -or -not $Config.ClientSecret)
     {
-        Write-Output "ClientId or ClientSecret variables not set."
+        Write-Warning "ClientId or ClientSecret variables not set."
         throw "Set the ClientId and ClientSecret variables."
     }
 
     # Extract zip file
     $source = $ZipPath -replace '\.zip$', ''
-    Write-Output "Extracting $ZipPath to $source..."
+    Write-Verbose "Extracting $ZipPath to $source..."
     Expand-Archive -Path $ZipPath -DestinationPath $source -Force -ErrorAction Stop
-    Write-Output "Extracted successfully."
+    Write-Verbose "Extracted successfully."
 
     # Install IntuneWin32App module
     Install-RequiredModule -ModuleName "IntuneWin32App"
@@ -174,28 +179,31 @@ try
         SetupFile    = $Config.SetupFile
         OutputFolder = Split-Path -Path $ZipPath -Parent
     }
-    Write-Output "Creating .intunewin package..."
+    Write-Verbose "Creating .intunewin package..."
     $intuneWinFile = New-IntuneWin32AppPackage @intuneWinParams -Verbose -ErrorAction Stop
     if (-not $intuneWinFile -or -not $intuneWinFile.Path -or -not (Test-Path $intuneWinFile.Path))
     {
-        Write-Output "Failed to create .intunewin package. Ensure the source folder and setup file are valid."
+        Write-Warning "Failed to create .intunewin package. Ensure the source folder and setup file are valid."
         throw "Invalid or missing .intunewin file."
     }
-    Write-Output "Created .intunewin package: $($intuneWinFile.Path)"
+    Write-Verbose "Created .intunewin package: $($intuneWinFile.Path)"
 
     # Get metadata
     $intuneWinMetaData = Get-IntuneWin32AppMetaData -FilePath $intuneWinFile.Path -ErrorAction Stop
 
     # Authenticate to Graph
-    Write-Output "Authenticating to Microsoft Graph..."
+    Write-Verbose "Authenticating to Microsoft Graph..."
     Connect-MSIntuneGraph -TenantID $Tenant -ClientID $Config.ClientId -ClientSecret $Config.ClientSecret -ErrorAction Stop
-    Write-Output "Authenticated successfully."
+    Write-Verbose "Authenticated successfully."
 
     # Install command line
     $installCommandLine = "$($intuneWinMetaData.ApplicationInfo.Name) Install"
-    if ($Lite) {
+    if ($Lite)
+    {
         $installCommandLine += " -Lite"
-    } else {
+    }
+    else
+    {
         $installCommandLine += " -Vantage"
     }
     if ($SUHelper)
@@ -239,7 +247,7 @@ try
     $sourceFileBase = [System.IO.Path]::GetFileNameWithoutExtension($source)
     $appVersion = $sourceFileBase -replace '^.*_', '' -replace '\.\d{14}$', ''
 
-    Write-Output "Parsed app version: $appVersion"
+    Write-Verbose "Parsed app version: $appVersion"
 
     # Add Win32 App
     $appParams = @{
@@ -257,18 +265,18 @@ try
         InstallCommandLine        = $installCommandLine
         UninstallCommandLine      = $uninstallCommandLine
     }
-    Write-Output "Adding Win32 app to Intune..."
+    Write-Verbose "Adding Win32 app to Intune..."
     Add-IntuneWin32App @appParams -Verbose -ErrorAction Stop
-    Write-Output "Win32 app added successfully."
+    Write-Verbose "Win32 app added successfully."
 }
 catch
 {
-    Write-Output "Error occurred: $($_.Exception.Message)"
+    Write-Warning "Error occurred: $($_.Exception.Message)"
     switch ($_.Exception.HResult)
     {
-        0x80070002 { Write-Output "File not found error." }
-        0x80070570 { Write-Output "File corrupted or inaccessible." }
-        default { Write-Output "Unexpected error: $($_.Exception.HResult)" }
+        0x80070002 { Write-Warning "File not found error." }
+        0x80070570 { Write-Warning "File corrupted or inaccessible." }
+        default { Write-Warning "Unexpected error: $($_.Exception.HResult)" }
     }
     throw
 }
@@ -277,13 +285,13 @@ finally
     # Cleanup
     if (Test-Path $source)
     {
-        Write-Output "Cleaning up temporary files..."
+        Write-Verbose "Cleaning up temporary files..."
         Remove-Item -Path $source -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Output "Cleanup completed."
+        Write-Verbose "Cleanup completed."
     }
     if ($intuneWinFile -and (Test-Path $intuneWinFile.Path))
     {
         Remove-Item -Path $intuneWinFile.Path -Force -ErrorAction SilentlyContinue
-        Write-Output "Removed .intunewin file."
+        Write-Verbose "Removed .intunewin file."
     }
 }
