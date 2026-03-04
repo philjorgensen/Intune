@@ -104,8 +104,8 @@ param(
 
 # Configuration
 $Config = @{
-     ClientId       = "##" # Set this to your Intune app registration Client ID
-    ClientSecret    = "####" # Set this to your Intune app registration Client Secret
+     ClientId       = "" # Set this to your Intune app registration Client ID
+    ClientSecret    = "" # Set this to your Intune app registration Client Secret
     MinSupportedOS  = "w10_1809"
     RegistryKeyPath = "HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\BIOS"
     InformationURL  = "https://support.lenovo.com/solutions/hf003321-lenovo-vantage-for-enterprise"
