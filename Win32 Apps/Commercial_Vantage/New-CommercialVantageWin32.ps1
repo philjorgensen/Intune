@@ -20,6 +20,9 @@
 .PARAMETER UninstallAppOnly
     Uninstall only the Commercial Vantage app instead of the entire suite.
 
+.PARAMETER UseAzCopy
+    Specify the UseAzCopy parameter switch when adding an application with source files larger than 500MB. 
+
 .EXAMPLE
     .\New-CommercialVantageWin32.ps1 -Tenant "contoso.com" -ZipPath "C:\LenovoCommercialVantage_10.2208.22.0_v3.zip" -DetectionScriptFile "C:\Detect-CommercialVantage.ps1" -SUHelper -Verbose
     Installs the full suite with SU Helper and uninstalls the entire suite.
@@ -90,15 +93,19 @@ param(
 
     [Parameter(Mandatory = $false, HelpMessage = "Only System Update feature will be installed.")]
     [switch]$Lite,
+    
+    [Parameter(Mandatory = $false, HelpMessage ="Tells the script to use AzCopy.exe method for file transfer")]
+    [switch]$UseAzCopy,
 
     [Parameter(Mandatory = $false, HelpMessage = "Uninstall only the Commercial Vantage app instead of the entire suite.")]
     [switch]$UninstallAppOnly
+
 )
 
 # Configuration
 $Config = @{
-    ClientId        = "" # Set this to your Intune app registration Client ID
-    ClientSecret    = "" # Set this to your Intune app registration Client Secret
+     ClientId       = "##" # Set this to your Intune app registration Client ID
+    ClientSecret    = "####" # Set this to your Intune app registration Client Secret
     MinSupportedOS  = "w10_1809"
     RegistryKeyPath = "HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\BIOS"
     InformationURL  = "https://support.lenovo.com/solutions/hf003321-lenovo-vantage-for-enterprise"
@@ -107,7 +114,6 @@ $Config = @{
     Publisher       = "Lenovo"
     Description     = "Commercial Vantage provides a user interface for changing hardware settings, checking for Lenovo software and driver updates, and more."
 }
-
 
 # Function to install or update a module
 function Install-RequiredModule
@@ -271,23 +277,51 @@ try
     }
 
     Write-Verbose "Adding Win32 app to Intune..."
-    $intuneApp = Add-IntuneWin32App @appParams -ErrorAction Stop -UseAzCopy -AzCopyWindowStyle hidden -Verbose #6>$null #-UseAzCopy -AzCopyWindowStyle hidden -UseAzCopy
-    Write-Verbose "Win32 app added successfully. App ID: $($intuneApp.id)"
     
-#Check that we have an App ID to set Icon
+    $addAppParams = @{
+            ErrorAction = 'Stop'
+    }
+
+    if ($UseAzCopy) {
+    $addAppParams['UseAzCopy']         = $true
+    $addAppParams['AzCopyWindowStyle'] = 'hidden'
+    }
+
+    $intuneApp = Add-IntuneWin32App @appParams @addAppParams -Verbose
+    #$intuneApp = Add-IntuneWin32App @appParams -ErrorAction Stop -UseAzCopy -AzCopyWindowStyle hidden -Verbose #6>$null #-UseAzCopy -AzCopyWindowStyle hidden -UseAzCopy
+    Write-Verbose "Win32 app added successfully. App ID: $($intuneApp.id)"
+
+   <#check that we have an App ID to set Icon
+   if ($intuneApp -and $intuneApp.id) {
+    Write-Verbose "Looking for an App Icon in working folder"
+    $iconFile = Get-ChildItem -Path $zipFolder -Filter "*.png" -File | Select-Object -First 1
+    if ($iconFile) {
+        Write-Verbose "Found PNG icon: $($iconFile.FullName)"
+        $iconBase64 = New-IntuneWin32AppIcon -FilePath $iconFile
+        Write-verbose "Converted PNG to base64"
+        Set-IntuneWin32App -ID $intuneApp.id -Icon $iconBase64
+        Write-Verbose "App Icon set successfully."
+    }
+    else {
+        Write-Warning "No ICON file found in $zipFolder, attempting to retrieve from App store."
+        $iconUrl = "https://store-images.s-microsoft.com/image/apps.43368.9007199266245619.fdfb1c62-4857-4684-bb35-f6ee88fcca67.ee098c14-3169-4739-b6da-da70cf9ed8ff?h=380"
+        $iconPath = Join-Path -Path $zipFolder -ChildPath "VantageIcon.png"
+        Invoke-WebRequest -Uri $iconUrl -OutFile $iconPath -ErrorAction Stop
+        Write-Verbose "Icon downloaded to: $iconPath"
+
+    }
+}#>
+
 if ($intuneApp -and $intuneApp.id) {
     Write-Verbose "Looking for an App Icon in working folder"
-    #look for a PNG in the working directory
     $iconFile = Get-ChildItem -Path $zipFolder -Filter "*.png" -File | Select-Object -First 1
 
-    #If no PNG found attempt to download from Official MS Store online
     if (-not $iconFile) {
         Write-Warning "No PNG found in $zipFolder, attempting to retrieve from App store."
         $iconUrl = "https://store-images.s-microsoft.com/image/apps.43368.9007199266245619.fdfb1c62-4857-4684-bb35-f6ee88fcca67.ee098c14-3169-4739-b6da-da70cf9ed8ff?h=380"
         $iconPath = Join-Path -Path $zipFolder -ChildPath "VantageIcon.png"
         Invoke-WebRequest -Uri $iconUrl -OutFile $iconPath -ErrorAction Stop
 
-        #Check that file downloaded is not blank or zerobytes
         if (Test-Path -LiteralPath $iconPath) {
             $iconSize = (Get-Item -LiteralPath $iconPath).Length
             if ($iconSize -gt 0) {
@@ -311,7 +345,7 @@ if ($intuneApp -and $intuneApp.id) {
         Write-Verbose "App Icon set successfully."
     }
     else{
-    Write-Verbose "No App Icon found successfully. Skipping setting App ICON"
+        Write-Verbose "No App Icon found successfully. Skipping setting App ICON"
     }
 }
     
@@ -341,17 +375,20 @@ finally
         Remove-Item -Path $intuneWinFile.Path -Force -ErrorAction SilentlyContinue
         Write-Verbose "Removed .intunewin file."
     }
-}
-$stopUtc = [datetime]::UtcNow
 
-# Calculate the total run time
-$runTime = $stopUTC - $startUTC
+    $stopUtc = [datetime]::UtcNow
 
-# Format the runtime with hours, minutes, and seconds
-if ($runTime.TotalHours -ge 1) {
-	$runTimeFormatted = 'Duration: {0:hh} hr {0:mm} min {0:ss} sec' -f $runTime
+    # Calculate the total run time
+    $runTime = $stopUTC - $startUTC
+
+    # Format the runtime with hours, minutes, and seconds
+    if ($runTime.TotalHours -ge 1) {
+	    $runTimeFormatted = 'Duration: {0:hh} hr {0:mm} min {0:ss} sec' -f $runTime
+    }
+    else {
+	    $runTimeFormatted = 'Duration: {0:mm} min {0:ss} sec' -f $runTime
+    }
+
+    Write-Verbose "Total Script $($runTimeFormatted)"
 }
-else {
-	$runTimeFormatted = 'Duration: {0:mm} min {0:ss} sec' -f $runTime
-}
-Write-Verbose "Total Script $($runTimeFormatted)"
+
