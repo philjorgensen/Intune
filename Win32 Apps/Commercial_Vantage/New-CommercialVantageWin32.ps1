@@ -291,27 +291,8 @@ try
     #$intuneApp = Add-IntuneWin32App @appParams -ErrorAction Stop -UseAzCopy -AzCopyWindowStyle hidden -Verbose #6>$null #-UseAzCopy -AzCopyWindowStyle hidden -UseAzCopy
     Write-Verbose "Win32 app added successfully. App ID: $($intuneApp.id)"
 
-   <#check that we have an App ID to set Icon
-   if ($intuneApp -and $intuneApp.id) {
-    Write-Verbose "Looking for an App Icon in working folder"
-    $iconFile = Get-ChildItem -Path $zipFolder -Filter "*.png" -File | Select-Object -First 1
-    if ($iconFile) {
-        Write-Verbose "Found PNG icon: $($iconFile.FullName)"
-        $iconBase64 = New-IntuneWin32AppIcon -FilePath $iconFile
-        Write-verbose "Converted PNG to base64"
-        Set-IntuneWin32App -ID $intuneApp.id -Icon $iconBase64
-        Write-Verbose "App Icon set successfully."
-    }
-    else {
-        Write-Warning "No ICON file found in $zipFolder, attempting to retrieve from App store."
-        $iconUrl = "https://store-images.s-microsoft.com/image/apps.43368.9007199266245619.fdfb1c62-4857-4684-bb35-f6ee88fcca67.ee098c14-3169-4739-b6da-da70cf9ed8ff?h=380"
-        $iconPath = Join-Path -Path $zipFolder -ChildPath "VantageIcon.png"
-        Invoke-WebRequest -Uri $iconUrl -OutFile $iconPath -ErrorAction Stop
-        Write-Verbose "Icon downloaded to: $iconPath"
 
-    }
-}#>
-
+#Check that we have an App ID to set the Icon
 if ($intuneApp -and $intuneApp.id) {
     Write-Verbose "Looking for an App Icon in working folder"
     $iconFile = Get-ChildItem -Path $zipFolder -Filter "*.png" -File | Select-Object -First 1
