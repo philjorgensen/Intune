@@ -9,7 +9,7 @@ $minSUHelperVersion = [version]"1.0.0.22"
 try
 {
     # Get the path to the most recent VantageService folder under ProgramFiles(x86)
-    $vantageServicePath = Get-ChildItem -Path "${env:ProgramFiles(x86)}\Lenovo\VantageService" -Directory | Select-Object -Last 1
+    $vantageServicePath = Get-ChildItem -Path "${env:ProgramFiles(x86)}\Lenovo\VantageService" -Directory -ErrorAction Stop | Select-Object -Last 1
     # Check if the path exists before proceeding
     if ($vantageServicePath)
     {
