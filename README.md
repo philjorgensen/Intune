@@ -6,6 +6,7 @@ This repository contains Lenovo Intune and Autopilot deployment content, includi
 
 - `Autopilot/` - Scripts and source content used in Windows Autopilot deployments.
   - `BiosCertificateAuth/` - Certificate-based BIOS authentication scripts and supporting documentation.
+  - `Lenovo-Client-Update/` - Win32 app wrapper around the Lenovo.Client.Update (LCU) module to install drivers, firmware, and BIOS during Autopilot pre-provisioning.
   - `System Update/` - Autopilot-related update scripts and deployment helpers.
   - `Thin Installer/` - Thin installer resources for Autopilot scenarios.
   - `ThinkBiosConfig/` - Think BIOS configuration tooling and sample files.
