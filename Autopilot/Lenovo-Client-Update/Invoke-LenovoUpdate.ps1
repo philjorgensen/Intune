@@ -44,7 +44,7 @@
 
 .NOTES
     Intune Win32 app install command (force 64-bit so the module's native bits load):
-        %SystemRoot%\Sysnative\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -NoProfile -File .\Install-LenovoDrivers.ps1
+        %SystemRoot%\Sysnative\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -NoProfile -File .\Install-LenovoUpdate.ps1
 
     Place the Lenovo.Client.Update module folder next to this script before building the
     .intunewin so it ships with the app.
