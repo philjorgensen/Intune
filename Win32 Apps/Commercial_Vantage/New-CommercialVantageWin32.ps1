@@ -21,7 +21,7 @@
     Uninstall only the Commercial Vantage app instead of the entire suite.
 
 .PARAMETER UseAzCopy
-    Specify the UseAzCopy parameter switch when adding an application with source files larger than 500MB. 
+    Specify the UseAzCopy parameter switch when adding an application with source files larger than 500MB.
 
 .EXAMPLE
     .\New-CommercialVantageWin32.ps1 -Tenant "contoso.com" -ZipPath "C:\LenovoCommercialVantage_10.2208.22.0_v3.zip" -DetectionScriptFile "C:\Detect-CommercialVantage.ps1" -SUHelper -Verbose
@@ -57,6 +57,7 @@
                          Remove SupportsShouldProcess from CmdletBinding
                          Replace Write-Output with Write-Verbose/Write-Warning throughout
                          Fix inconsistent brace style in install command logic
+    2.2.1 - (2026-07-09) Demote no-local-PNG icon fallback from Write-Warning to Write-Verbose
 
     Requires a Microsoft Entra app registration with DeviceManagementApps.ReadWrite.All permissions.
     Reference: https://github.com/MSEndpointMgr/IntuneWin32App/issues/156
@@ -93,7 +94,7 @@ param(
 
     [Parameter(Mandatory = $false, HelpMessage = "Only System Update feature will be installed.")]
     [switch]$Lite,
-    
+
     [Parameter(Mandatory = $false, HelpMessage ="Tells the script to use AzCopy.exe method for file transfer")]
     [switch]$UseAzCopy,
 
@@ -104,7 +105,7 @@ param(
 
 # Configuration
 $Config = @{
-     ClientId       = "" # Set this to your Intune app registration Client ID
+    ClientId        = "" # Set this to your Intune app registration Client ID
     ClientSecret    = "" # Set this to your Intune app registration Client Secret
     MinSupportedOS  = "w10_1809"
     RegistryKeyPath = "HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\BIOS"
@@ -277,7 +278,7 @@ try
     }
 
     Write-Verbose "Adding Win32 app to Intune..."
-    
+
     $addAppParams = @{
             ErrorAction = 'Stop'
     }
@@ -298,7 +299,7 @@ if ($intuneApp -and $intuneApp.id) {
     $iconFile = Get-ChildItem -Path $zipFolder -Filter "*.png" -File | Select-Object -First 1
 
     if (-not $iconFile) {
-        Write-Warning "No PNG found in $zipFolder, attempting to retrieve from App store."
+        Write-Verbose "No PNG found in $zipFolder, retrieving icon from the App store."
         $iconUrl = "https://store-images.s-microsoft.com/image/apps.43368.9007199266245619.fdfb1c62-4857-4684-bb35-f6ee88fcca67.ee098c14-3169-4739-b6da-da70cf9ed8ff?h=380"
         $iconPath = Join-Path -Path $zipFolder -ChildPath "VantageIcon.png"
         Invoke-WebRequest -Uri $iconUrl -OutFile $iconPath -ErrorAction Stop
@@ -329,7 +330,7 @@ if ($intuneApp -and $intuneApp.id) {
         Write-Verbose "No App Icon found successfully. Skipping setting App ICON"
     }
 }
-    
+
 }
 catch
 {
