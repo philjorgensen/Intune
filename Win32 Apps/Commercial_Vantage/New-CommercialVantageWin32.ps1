@@ -260,41 +260,7 @@ try
 
     Write-Verbose "Parsed app version: $appVersion"
 
-    # Add Win32 App
-    $appParams = @{
-        FilePath                  = $intuneWinFile.Path
-        DisplayName               = $Config.DisplayName
-        Description               = $Config.Description
-        Publisher                 = $Config.Publisher
-        AppVersion                = $appVersion
-        InformationURL            = $Config.InformationURL
-        InstallExperience         = "system"
-        RequirementRule           = $requirementRule
-        AdditionalRequirementRule = $requirementRegistryRule
-        RestartBehavior           = "basedOnReturnCode"
-        DetectionRule             = $detectionRule
-        InstallCommandLine        = $installCommandLine
-        UninstallCommandLine      = $uninstallCommandLine
-    }
-
-    Write-Verbose "Adding Win32 app to Intune..."
-
-    $addAppParams = @{
-            ErrorAction = 'Stop'
-    }
-
-    if ($UseAzCopy) {
-    $addAppParams['UseAzCopy']         = $true
-    $addAppParams['AzCopyWindowStyle'] = 'hidden'
-    }
-
-    $intuneApp = Add-IntuneWin32App @appParams @addAppParams -Verbose
-    #$intuneApp = Add-IntuneWin32App @appParams -ErrorAction Stop -UseAzCopy -AzCopyWindowStyle hidden -Verbose #6>$null #-UseAzCopy -AzCopyWindowStyle hidden -UseAzCopy
-    Write-Verbose "Win32 app added successfully. App ID: $($intuneApp.id)"
-
-
-#Check that we have an App ID to set the Icon
-if ($intuneApp -and $intuneApp.id) {
+    # --- Acquire icon BEFORE creating the app ---
     Write-Verbose "Looking for an App Icon in working folder"
     $iconFile = Get-ChildItem -Path $zipFolder -Filter "*.png" -File | Select-Object -First 1
 
@@ -319,17 +285,50 @@ if ($intuneApp -and $intuneApp.id) {
         }
     }
 
+    $iconObject = $null
     if ($iconFile) {
         Write-Verbose "Found PNG icon: $($iconFile.FullName)"
-        $iconBase64 = New-IntuneWin32AppIcon -FilePath $iconFile.FullName
-        Write-Verbose "Converted PNG to base64"
-        Set-IntuneWin32App -ID $intuneApp.id -Icon $iconBase64 -ErrorAction Stop
-        Write-Verbose "App Icon set successfully."
+        $iconObject = New-IntuneWin32AppIcon -FilePath $iconFile.FullName
+        Write-Verbose "Converted PNG to icon object"
     }
-    else{
-        Write-Verbose "No App Icon found successfully. Skipping setting App ICON"
+    else {
+        Write-Verbose "No App Icon found. Skipping icon assignment."
     }
-}
+
+    # Add Win32 App
+    $appParams = @{
+        FilePath                  = $intuneWinFile.Path
+        DisplayName               = $Config.DisplayName
+        Description               = $Config.Description
+        Publisher                 = $Config.Publisher
+        AppVersion                = $appVersion
+        InformationURL            = $Config.InformationURL
+        InstallExperience         = "system"
+        RequirementRule           = $requirementRule
+        AdditionalRequirementRule = $requirementRegistryRule
+        RestartBehavior           = "basedOnReturnCode"
+        DetectionRule             = $detectionRule
+        InstallCommandLine        = $installCommandLine
+        UninstallCommandLine      = $uninstallCommandLine
+    }
+    if ($iconObject) {
+        $appParams['Icon'] = $iconObject
+    }
+
+    Write-Verbose "Adding Win32 app to Intune..."
+
+    $addAppParams = @{
+            ErrorAction = 'Stop'
+    }
+
+    if ($UseAzCopy) {
+    $addAppParams['UseAzCopy']         = $true
+    $addAppParams['AzCopyWindowStyle'] = 'hidden'
+    }
+
+    $intuneApp = Add-IntuneWin32App @appParams @addAppParams -Verbose
+    #$intuneApp = Add-IntuneWin32App @appParams -ErrorAction Stop -UseAzCopy -AzCopyWindowStyle hidden -Verbose #6>$null #-UseAzCopy -AzCopyWindowStyle hidden -UseAzCopy
+    Write-Verbose "Win32 app added successfully. App ID: $($intuneApp.id)"
 
 }
 catch
@@ -373,4 +372,3 @@ finally
 
     Write-Verbose "Total Script $($runTimeFormatted)"
 }
-
