@@ -58,6 +58,7 @@
                          Replace Write-Output with Write-Verbose/Write-Warning throughout
                          Fix inconsistent brace style in install command logic
     2.2.1 - (2026-07-09) Demote no-local-PNG icon fallback from Write-Warning to Write-Verbose
+    2.2.2 - (2026-08-03) Refactor icon retrieval and assignment logic
 
     Requires a Microsoft Entra app registration with DeviceManagementApps.ReadWrite.All permissions.
     Reference: https://github.com/MSEndpointMgr/IntuneWin32App/issues/156
