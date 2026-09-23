@@ -1,10 +1,10 @@
 # Version of Lenovo Vantage that is being deployed
-$DeployedVantageVersion = [version]"20.2603.19.0"
+$DeployedVantageVersion = [version]"20.2606.24.0"
 # Minimum version requirements
 $minServiceVersion = [version]"3.8.23.0"
 # SUHelper check - set to $true to enable, $false to skip
 $checkSUHelper = $true
-$minSUHelperVersion = [version]"1.0.0.22"
+$minSUHelperVersion = [version]"1.0.0.35"
 
 try
 {
