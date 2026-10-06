@@ -11,6 +11,8 @@ This repository contains Lenovo Intune and Autopilot deployment content, includi
   - `Thin Installer/` - Thin installer resources for Autopilot scenarios.
   - `ThinkBiosConfig/` - Think BIOS configuration tooling and sample files.
 
+- `AssignmentFilters/` - Creates Intune assignment filters for Lenovo models from the Lenovo model catalog, resolving friendly model names to the machine type prefixes Intune reports in `device.model`.
+
 - `Remediations/` - Scripts and automation designed to remediate device configuration issues and manage endpoint state.
   - `Apps/` - Remediation apps and helper scripts.
   - `Asset Tag/` - Asset tag management and reporting automation.
