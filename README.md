@@ -21,6 +21,7 @@ This repository contains Lenovo Intune and Autopilot deployment content, includi
   - `Commercial_Vantage/` - Packaging for Lenovo Commercial Vantage.
   - `Intel_PPM/` - Intel Platform Power Management packaging and deployment scripts.
   - `ThinkBiosConfigTool/` - Packaging for Think BIOS Config Tool deployments.
+  - `ThinkBiosConfigTool_V2/` - Supervisor password change with Think BIOS Config Tool V2 and the `Lenovo.BIOS.Config` module.
 
 ## Usage
 
